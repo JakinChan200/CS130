@@ -35,6 +35,9 @@ Hit Render_World::Closest_Intersection(const Ray& ray)
             currentClosestDist = temp.dist;
         }
     }
+    // for(auto object : objects){
+
+    // }
 
     return o;
 }
