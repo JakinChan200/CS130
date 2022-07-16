@@ -22,7 +22,7 @@ Shade_Surface(const Ray& ray,const vec3& intersection_point,
         double diffuseScalar = std::max(dot(normal, l.normalized()), 0.0);
         color += world.lights[i]->Emitted_Light(l) * color_diffuse * diffuseScalar;
 
-        vec3 r = -l + (2.0*dot(l, normal) * normal);
+        vec3 r = -(+l - (2.0*dot(l, normal) * normal)).normalized();
         vec3 v = (world.camera.position - intersection_point).normalized();
         double specularScalar = pow(std::max(dot(v, r), 0.0), specular_power);
         color += world.lights[i]->Emitted_Light(l) * specularScalar * color_specular;
