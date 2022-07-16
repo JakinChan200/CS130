@@ -16,7 +16,7 @@ Shade_Surface(const Ray& ray,const vec3& intersection_point,
 
     color = world.ambient_intensity * world.ambient_color * color_ambient;
 
-    for(int i = 0 ; i < world.lights.size(); i++){
+    for(long unsigned int i = 0 ; i < world.lights.size(); i++){
         vec3 l = (world.lights[i]->position - intersection_point);
 
         double diffuseScalar = std::max(dot(normal, l.normalized()), 0.0);
