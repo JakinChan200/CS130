@@ -21,8 +21,16 @@ Shade_Surface(const Ray& ray,const vec3& intersection_point,
 
         double diffuseScalar = std::max(dot(normal, l.normalized()), 0.0);
         color += world.lights[i]->Emitted_Light(l) * color_diffuse * diffuseScalar;
-        
+
+        vec3 r = -l + (2.0*dot(l, normal) * normal);
+        vec3 v = (world.camera.position - intersection_point).normalized();
+        double specularScalar = pow(std::max(dot(v, r), 0.0), specular_power);
+        color += world.lights[i]->Emitted_Light(l) * specularScalar * color_specular;
     }
+
+    //color_specular
+    //specular_power
+    //r = l - 2dot(l, n)/dot(n, n) * n      can cross out denominator if normal is unit vector https://www.youtube.com/watch?v=naaeH1qbjdQ&t=650s
 
     //color = color_ambient + color_diffuse + color_specular;
     //TODO; //determine the color
