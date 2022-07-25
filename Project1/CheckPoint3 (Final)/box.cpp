@@ -4,6 +4,7 @@
 // Return whether the ray intersects this box.
 bool Box::Intersection(const Ray& ray) const
 {
+    //https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
     TODO;
     return true;
 }

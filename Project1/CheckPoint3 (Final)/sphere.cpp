@@ -26,13 +26,28 @@ vec3 Sphere::Normal(const vec3& point, int part) const
 {
     vec3 normal;
     normal = -(center-point).normalized();
-    //TODO; // compute the normal direction
+    //compute the normal direction
+
+    // Return the normal.  For objects with multiple parts (meshes), you
+    // will need to use part to determine which piece was intersected.
+    // It will be set to the part structure entry returned from the
+    // intersection routine.
     return normal;
 }
 
 Box Sphere::Bounding_Box(int part) const
 {
     Box box;
+
+    // If part>=0, return the bounding box for the specified part.
+    // If part<0, return the bounding box for the whole object.
+
+    // if(part >= 0){
+
+    // }else{
+    //     box.lo = center - radius;
+    //     box.hi = center + radius;
+    // }
     TODO; // calculate bounding box
     return box;
 }

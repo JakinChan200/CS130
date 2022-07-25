@@ -19,10 +19,18 @@ Shade_Surface(const Ray& ray,const vec3& intersection_point,
     for(long unsigned int i = 0 ; i < world.lights.size(); i++){
         vec3 l = (world.lights[i]->position - intersection_point);
 
+        if(world.enable_shadows){
+            Ray shadowRay(intersection_point, l);
+            Hit shadowIntersect = world.Closest_Intersection(shadowRay);
+            if(shadowIntersect.object != nullptr && shadowIntersect.dist < l.magnitude()){
+                continue;
+            }
+        }
+
         double diffuseScalar = std::max(dot(normal, l.normalized()), 0.0);
         color += world.lights[i]->Emitted_Light(l) * color_diffuse * diffuseScalar;
 
-        vec3 r = -(+l - (2.0*dot(l, normal) * normal)).normalized();
+        vec3 r = -(l - (2.0*dot(l, normal) * normal)).normalized();
         vec3 v = (world.camera.position - intersection_point).normalized();
         double specularScalar = pow(std::max(dot(v, r), 0.0), specular_power);
         color += world.lights[i]->Emitted_Light(l) * specularScalar * color_specular;
