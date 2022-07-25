@@ -262,7 +262,7 @@ bool Mesh::Intersect_Triangle(const Ray& ray, int tri, double& dist) const
     // double beta = cross(p - vertices[curTriangle[1]], p - vertices[curTriangle[2]]).magnitude() / areaTri;
     // double gamma = 1 - alpha - beta; //(cross(vertices[curTriangle[2]] - p, vertices[curTriangle[0]] - p).magnitude() / 2) / areaTri;
 
-    return alpha > -weight_tol && beta > -weight_tol && gamma > -weight_tol && dist > small_t;
+    return alpha > -weight_tol && beta > -weight_tol && gamma > -weight_tol;
 }
 
 // Compute the bounding box.  Return the bounding box of only the triangle whose
