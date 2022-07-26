@@ -35,10 +35,6 @@ Hit Render_World::Closest_Intersection(const Ray& ray)
             currentClosestDist = temp.dist;
         }
     }
-    // for(auto object : objects){
-
-    // }
-
     return o;
 }
 
@@ -85,8 +81,15 @@ vec3 Render_World::Cast_Ray(const Ray& ray,int recursion_depth)
 
 void Render_World::Initialize_Hierarchy()
 {
-    TODO; // Fill in hierarchy.entries; there should be one entry for
-    // each part of each object.
+    for(auto object : objects){
+        for(int i = 0; i < object->number_parts; i++){
+            Entry temp;
+            temp.obj = object;
+            temp.box = object->Bounding_Box(i);
+            temp.part = i;
+            hierarchy.entries.push_back(temp);
+        }
+    }
 
     hierarchy.Reorder_Entries();
     hierarchy.Build_Tree();

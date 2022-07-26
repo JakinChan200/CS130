@@ -38,17 +38,8 @@ vec3 Sphere::Normal(const vec3& point, int part) const
 Box Sphere::Bounding_Box(int part) const
 {
     Box box;
-
-    // If part>=0, return the bounding box for the specified part.
-    // If part<0, return the bounding box for the whole object.
-
-    // if(part >= 0){
-
-    // }else{
-    //     box.lo = center - radius;
-    //     box.hi = center + radius;
-    // }
-    TODO; // calculate bounding box
+    box.lo = center - radius;
+    box.hi = center + radius;
     return box;
 }
 
