@@ -28,17 +28,23 @@ Hit Render_World::Closest_Intersection(const Ray& ray)
 
     //For every object in objects, see if ray intersects and if the intersection distance is less than what we currently have
     //If both conditions are true, update o to be the current closest intersection
-    for(unsigned long int i = 0; i < objects.size(); i++){
-        Hit temp = objects[i]->Intersection(ray, -1);
+    std::vector<int> candidates;
+    hierarchy.Intersection_Candidates(ray, candidates);
+
+    for(unsigned long int i = 0; i < candidates.size(); i++){
+        Hit temp = hierarchy.entries[candidates[i]].obj->Intersection(ray, hierarchy.entries[candidates[i]].part); //setting part to "-1" brings it up to 31 from 29
         if(temp.dist >= small_t && temp.dist < currentClosestDist){
             o = temp;
             currentClosestDist = temp.dist;
         }
     }
-    // for(auto object : objects){
-
+    // for(unsigned long int i = 0; i < objects.size(); i++){
+    //     Hit temp = objects[i]->Intersection(ray, -1);
+    //     if(temp.dist >= small_t && temp.dist < currentClosestDist){
+    //         o = temp;
+    //         currentClosestDist = temp.dist;
+    //     }
     // }
-
     return o;
 }
 
@@ -85,8 +91,15 @@ vec3 Render_World::Cast_Ray(const Ray& ray,int recursion_depth)
 
 void Render_World::Initialize_Hierarchy()
 {
-    TODO; // Fill in hierarchy.entries; there should be one entry for
-    // each part of each object.
+    for(auto object : objects){
+        for(int i = 0; i < object->number_parts; i++){
+            Entry temp;
+            temp.obj = object;
+            temp.box = object->Bounding_Box(i);
+            temp.part = i;
+            hierarchy.entries.push_back(temp);
+        }
+    }
 
     hierarchy.Reorder_Entries();
     hierarchy.Build_Tree();

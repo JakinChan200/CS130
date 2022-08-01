@@ -270,6 +270,12 @@ bool Mesh::Intersect_Triangle(const Ray& ray, int tri, double& dist) const
 Box Mesh::Bounding_Box(int part) const
 {
     Box b;
-    TODO;
+    // b.Include_Point(vertices[triangles[part][0]]);
+    // b.Include_Point(vertices[triangles[part][1]]);
+    // b.Include_Point(vertices[triangles[part][2]]);
+    for(int i = 0; i < 3; i++){
+        b.lo[i] = std::min(vertices[triangles[part][0]][i], std::min(vertices[triangles[part][1]][i], vertices[triangles[part][2]][i]));
+        b.hi[i] = std::max(vertices[triangles[part][0]][i], std::max(vertices[triangles[part][1]][i], vertices[triangles[part][2]][i]));
+    }
     return b;
 }

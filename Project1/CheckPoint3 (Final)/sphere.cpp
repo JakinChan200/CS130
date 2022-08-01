@@ -4,7 +4,6 @@
 // Determine if the ray intersects with the sphere
 Hit Sphere::Intersection(const Ray& ray, int part) const
 {
-    //TODO;
     vec3 distanceCenter = ray.endpoint-center;
     double discriminant = pow(dot(ray.direction, distanceCenter), 2) - dot(ray.direction, ray.direction) * (dot(distanceCenter, distanceCenter) - pow(radius, 2));
 
@@ -38,17 +37,8 @@ vec3 Sphere::Normal(const vec3& point, int part) const
 Box Sphere::Bounding_Box(int part) const
 {
     Box box;
-
-    // If part>=0, return the bounding box for the specified part.
-    // If part<0, return the bounding box for the whole object.
-
-    // if(part >= 0){
-
-    // }else{
-    //     box.lo = center - radius;
-    //     box.hi = center + radius;
-    // }
-    TODO; // calculate bounding box
+    box.lo = center - radius;
+    box.hi = center + radius;
     return box;
 }
 
