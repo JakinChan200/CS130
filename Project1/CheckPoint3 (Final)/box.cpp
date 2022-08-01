@@ -10,7 +10,7 @@ bool Box::Intersection(const Ray& ray) const
     //Basically, the intersection would be at Ox + tDx = Bx for x
     //If we solve for x, we would get t = (Bx-Ox)/Dx
 
-    int sign[3];  //Store signs so instead of potentially dividing by 0, we are multiplying by the inverse (multiplying is also probably faster than dividing?)
+    //int sign[3];  //Store signs so instead of potentially dividing by 0, we are multiplying by the inverse (multiplying is also probably faster than dividing?)
     double txmin, txmax, tymin, tymax, tzmin, tzmax;
 
     vec3 inverseDir; //getting the inverse of all the Dx, Dy, Dz
@@ -52,8 +52,8 @@ Box Box::Union(const Box& bb) const
 {
     Box box;
     for(int i = 0; i < 3; i++){
-        box.lo[i] = std::min(lo[i], bb.lo[i]);
-        box.hi[i] = std::max(hi[i], bb.hi[i]);
+        box.lo[i] = std::min(this->lo[i], bb.lo[i]);
+        box.hi[i] = std::max(this->hi[i], bb.hi[i]);
     }
     return box;
 }
@@ -62,10 +62,10 @@ Box Box::Union(const Box& bb) const
 void Box::Include_Point(const vec3& pt)
 {
     for(int i = 0; i < 3; i++){
-        if(pt[i] < lo[i])
-            lo[i] = pt[i];
-        if(pt[i] > hi[i])
-            hi[i] = pt[i];
+        if(pt[i] < this->lo[i])
+            this->lo[i] = pt[i];
+        if(pt[i] > this->hi[i])
+            this->hi[i] = pt[i];
     }
 }
 

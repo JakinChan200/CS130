@@ -28,13 +28,23 @@ Hit Render_World::Closest_Intersection(const Ray& ray)
 
     //For every object in objects, see if ray intersects and if the intersection distance is less than what we currently have
     //If both conditions are true, update o to be the current closest intersection
-    for(unsigned long int i = 0; i < objects.size(); i++){
-        Hit temp = objects[i]->Intersection(ray, -1);
+    std::vector<int> candidates;
+    hierarchy.Intersection_Candidates(ray, candidates);
+
+    for(unsigned long int i = 0; i < candidates.size(); i++){
+        Hit temp = hierarchy.entries[candidates[i]].obj->Intersection(ray, hierarchy.entries[candidates[i]].part); //setting part to "-1" brings it up to 31 from 29
         if(temp.dist >= small_t && temp.dist < currentClosestDist){
             o = temp;
             currentClosestDist = temp.dist;
         }
     }
+    // for(unsigned long int i = 0; i < objects.size(); i++){
+    //     Hit temp = objects[i]->Intersection(ray, -1);
+    //     if(temp.dist >= small_t && temp.dist < currentClosestDist){
+    //         o = temp;
+    //         currentClosestDist = temp.dist;
+    //     }
+    // }
     return o;
 }
 

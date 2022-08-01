@@ -4,7 +4,6 @@
 // Determine if the ray intersects with the sphere
 Hit Sphere::Intersection(const Ray& ray, int part) const
 {
-    //TODO;
     vec3 distanceCenter = ray.endpoint-center;
     double discriminant = pow(dot(ray.direction, distanceCenter), 2) - dot(ray.direction, ray.direction) * (dot(distanceCenter, distanceCenter) - pow(radius, 2));
 
