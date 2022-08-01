@@ -41,7 +41,7 @@ Shade_Surface(const Ray& ray,const vec3& intersection_point,
     //r = l - 2dot(l, n)/dot(n, n) * n      can cross out denominator if normal is unit vector https://www.youtube.com/watch?v=naaeH1qbjdQ&t=650s
 
     //color = color_ambient + color_diffuse + color_specular;
-    //TODO; //determine the color
+    //determine the color
     //Ambient + diffuse + Specular = phong
     //Ambient: I = LaRa
     return color;
