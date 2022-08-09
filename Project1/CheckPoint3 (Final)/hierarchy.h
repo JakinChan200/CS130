@@ -49,5 +49,7 @@ public:
     // Return a list of candidates (indices into the entries list) whose
     // bounding boxes intersect the ray.
     void Intersection_Candidates(const Ray& ray, std::vector<int>& candidates) const;
+
+    int Partition(int axis, int lower, int higher);
 };
 #endif
