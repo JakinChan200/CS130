@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <limits>
 
 using namespace std;
 driver_state::driver_state()
@@ -24,10 +25,11 @@ void initialize_render(driver_state& state, int width, int height)
 
     int dimensions = width * height;
     state.image_color= new pixel[dimensions];
-    state.image_depth= 0;//new float[dimensions];
+    state.image_depth= new float[dimensions];
 
     for(int i = 0; i < dimensions; i++){
         state.image_color[i] = make_pixel(0, 0, 0);
+        state.image_depth[i] = std::numeric_limits<float>::max();
     }
 
     
@@ -125,6 +127,12 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
     float beta;
     float gamma;
 
+    auto *data = new float[MAX_FLOATS_PER_VERTEX];
+    data_fragment pixelData{data};
+    data_output color;
+    float zBuffer;
+    float denom;
+
     for(int i = minY; i <= maxY; i++){
         for(int j = minX; j <= maxX; j++){
             alpha = 0.5f*(((v12[0] * v22[1]) - (v22[0] * v12[1])) + ((v22[0] * i) - (j * v22[1])) + ((j*v12[1]) - (v12[0]*i)))/triangleArea;
@@ -132,7 +140,29 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
             gamma = 0.5f*(((v02[0] * v12[1]) - (v12[0] * v02[1])) + ((v12[0] * i) - (j * v12[1])) + ((j*v02[1]) - (v02[0]*i)))/triangleArea;
             
             if(alpha >= 0 && beta >= 0 && gamma >= 0){
-                state.image_color[j + (i*state.image_width)] = make_pixel(255, 255, 255);
+                zBuffer = alpha*v0.gl_Position[2] + beta*v1.gl_Position[2] + gamma*v2.gl_Position[2]; //Only take the closest color
+                if(!(zBuffer < state.image_depth[j + (i*state.image_width)])){continue;}
+
+                for(int k = 0; k < state.floats_per_vertex; k++){
+                    switch(state.interp_rules[k]){
+                        case interp_type::flat:
+                            pixelData.data[k] = v0.data[k]; //Use the data of the first vertex
+                            break;
+                        case interp_type::smooth:
+                            denom = alpha/v0.gl_Position[3] + beta/v1.gl_Position[3] + gamma/v2.gl_Position[3];
+                            pixelData.data[k] = (alpha/v0.gl_Position[3])/denom + (beta/v1.gl_Position[3])/denom + (gamma/v2.gl_Position[3])/denom;
+                            break;
+                        case interp_type::noperspective:
+                            pixelData.data[k] = alpha*v0.data[k] + beta*v1.data[k] + gamma*v2.data[k]; //Use the data of all three, with no perspective changes
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                state.fragment_shader(pixelData, color, state.uniform_data);
+
+                state.image_depth[j + (i*state.image_width)] = zBuffer;
+                state.image_color[j + (i*state.image_width)] = make_pixel(color.output_color[0]*255, color.output_color[1]*255, color.output_color[2]*255);
             }
         }
     }
