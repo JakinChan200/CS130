@@ -51,23 +51,24 @@ void render(driver_state& state, render_type type)
 
     switch(type){
         case render_type::triangle:{
-            for(int i = 0; i < state.num_vertices / 3; i++){
-                for(int j = 0; j < 3; j++){
-                    custData[j].data = &state.vertex_data[(i * 3 + j)* state.floats_per_vertex];
-                    temp[j].data = custData[j].data;
-                    state.vertex_shader(custData[j], temp[j], state.uniform_data);
+            for(int i = 0; i < state.num_vertices; i++){
+                vert = i % 3;
+                custData[vert].data = &state.vertex_data[i * state.floats_per_vertex];
+                temp[vert].data = custData[vert].data;
+                state.vertex_shader(custData[vert], temp[vert], state.uniform_data);
+                if(vert == 2){
+                    clip_triangle(state, temp[0], temp[1], temp[2], 0);            
                 }
-                clip_triangle(state, temp[0], temp[1], temp[2], 0);            
             }
             break;
         }
         case render_type::indexed:{ //index_data holds the index for each vertex info from vertex_data
             for(int i = 0; i < 3*state.num_triangles; i++){
                 vert = i % 3;
-                custData[vert].data = &state.vertex_data[state.index_data[i]* state.floats_per_vertex];
+                custData[vert].data = &state.vertex_data[state.index_data[i] * state.floats_per_vertex];
                 temp[vert].data = custData[vert].data;
                 state.vertex_shader(custData[vert], temp[vert], state.uniform_data);
-                if(i != 0 && vert == 2){ //If all three vertices are initialized full (technically doenst check for it though)
+                if(vert == 2){ //If all three vertices are initialized full (technically doenst check for it though)
                     clip_triangle(state, temp[0], temp[1], temp[2], 0);
                 }          
             }
