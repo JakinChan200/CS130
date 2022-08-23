@@ -277,9 +277,8 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
                             denom = alpha/v0.gl_Position[3] + beta/v1.gl_Position[3] + gamma/v2.gl_Position[3];
                             
                             pixelData.data[k] = ((alpha / v0.gl_Position[3] / denom) * v0.data[k]) 
-                                            + ((beta  / v1.gl_Position[3] / denom) * v1.data[k]) 
-                                            + ((gamma / v2.gl_Position[3] / denom) * v2.data[k]);
-
+                                              + ((beta  / v1.gl_Position[3] / denom) * v1.data[k]) 
+                                              + ((gamma / v2.gl_Position[3] / denom) * v2.data[k]);
                             break;
                         case interp_type::noperspective:
                             pixelData.data[k] = alpha*v0.data[k] + beta*v1.data[k] + gamma*v2.data[k]; //Use the data of all three, with no perspective changes
