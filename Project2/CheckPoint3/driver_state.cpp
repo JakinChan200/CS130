@@ -47,30 +47,52 @@ void render(driver_state& state, render_type type)
 {
     data_geometry temp[3];
     data_vertex custData[3];
+    int vert = 0;
 
     switch(type){
         case render_type::triangle:{
-            for (int i = 0; i < state.num_vertices / 3; i++) {
-                for (int j = 0; j < 3; j++) {
+            for(int i = 0; i < state.num_vertices / 3; i++){
+                for(int j = 0; j < 3; j++){
                     custData[j].data = &state.vertex_data[(i * 3 + j)* state.floats_per_vertex];
                     temp[j].data = custData[j].data;
                     state.vertex_shader(custData[j], temp[j], state.uniform_data);
                 }
-                clip_triangle(state, temp[0], temp[1], temp[2], 0);
-                //rasterize_triangle(state, temp[0], temp[1], temp[2]);
+                clip_triangle(state, temp[0], temp[1], temp[2], 0);            
             }
             break;
         }
-        case render_type::indexed:{
-
+        case render_type::indexed:{ //index_data holds the index for each vertex info from vertex_data
+            for(int i = 0; i < 3*state.num_triangles; i++){
+                vert = i % 3;
+                custData[vert].data = &state.vertex_data[state.index_data[i]* state.floats_per_vertex];
+                temp[vert].data = custData[vert].data;
+                state.vertex_shader(custData[vert], temp[vert], state.uniform_data);
+                if(i != 0 && vert == 2){ //If all three vertices are initialized full (technically doenst check for it though)
+                    clip_triangle(state, temp[0], temp[1], temp[2], 0);
+                }          
+            }
             break;
         }
-        case render_type::fan:{
-
+        case render_type::fan:{ //Keep the first vertex as the common first one for all triangles
+            for(int i = 0; i < state.num_vertices; i++){
+                for(int j = 0; j < 3; j++){
+                    custData[j].data = j == 0 ? state.vertex_data : &state.vertex_data[((i + j) * state.floats_per_vertex)];
+                    temp[j].data = custData[j].data;
+                    state.vertex_shader(custData[j], temp[j], state.uniform_data);
+                }
+                clip_triangle(state, temp[0], temp[1], temp[2], 0);
+            }
             break;
         }
-        case render_type::strip:{
-
+        case render_type::strip:{   //Instead of 3N, its N + 2 where N is the number of vertices (ABCDE -> ABC, BCD, CDE)
+            for(int i = 0; i < state.num_vertices-2; i++){
+                for(int j = 0; j < 3; j++){
+                    custData[j].data = &state.vertex_data[(i+j)* state.floats_per_vertex];
+                    temp[j].data = custData[j].data;
+                    state.vertex_shader(custData[j], temp[j], state.uniform_data);
+                }
+                clip_triangle(state, temp[0], temp[1], temp[2], 0);
+            }
             break;
         }
         default:
@@ -195,7 +217,6 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
     }else{
         return;
     }
-    //cout << vert1.gl_Position << endl;
 
     //std::cout<<"TODO: implement clipping. (The current code passes the triangle through without clipping them.)"<<std::endl;
     //clip_triangle(state,v0,v1,v2,face+1);
