@@ -102,4 +102,6 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
 void rasterize_triangle(driver_state& state, const data_geometry& v0,
     const data_geometry& v1, const data_geometry& v2);
 
+data_geometry createTriangle(driver_state& state, const data_geometry& v0, const data_geometry& v1, int axis, unsigned int sign);
+
 #endif

@@ -56,6 +56,7 @@ void render(driver_state& state, render_type type)
                     temp[j].data = custData[j].data;
                     state.vertex_shader(custData[j], temp[j], state.uniform_data);
                 }
+                clip_triangle(state, temp[0], temp[1], temp[2], 0);
                 rasterize_triangle(state, temp[0], temp[1], temp[2]);
             }
             break;
@@ -84,14 +85,145 @@ void render(driver_state& state, render_type type)
 // clip against each of the clipping faces in turn.  When face=6, clip_triangle should
 // simply pass the call on to rasterize_triangle.
 void clip_triangle(driver_state& state, const data_geometry& v0,
-    const data_geometry& v1, const data_geometry& v2,int face)
-{
-    if(face==6)
-    {
+    const data_geometry& v1, const data_geometry& v2,int face){
+    
+    //https://www.ijirt.org/master/publishedpaper/IJIRT100119_PAPER.pdf
+    //cout << face << endl;
+    if(face==6){
         rasterize_triangle(state, v0, v1, v2);
         return;
     }
-    std::cout<<"TODO: implement clipping. (The current code passes the triangle through without clipping them.)"<<std::endl;
+
+    vec4 A = v0.gl_Position;
+    vec4 B = v1.gl_Position;
+    vec4 C = v2.gl_Position;
+
+    //Innocent till proven guilty
+    bool isAIn = true;
+    bool isBIn = true;
+    bool isCIn = true;
+    float sign = 1;
+    int axis;
+
+    switch(face){
+        case 0: // x <= w       right side
+            isAIn = A[0] <= A[3] ? true : false;
+            isBIn = B[0] <= B[3] ? true : false;
+            isCIn = C[0] <= C[3] ? true : false;
+            axis = 0;
+            break;
+        case 1: // x >= -w      left side
+            isAIn = A[0] >= -A[3] ? true : false;
+            isBIn = B[0] >= -B[3] ? true : false;
+            isCIn = C[0] >= -C[3] ? true : false;
+            sign = -1;
+            axis = 0;
+            break;
+        case 2: // y <= w       top side
+            isAIn = A[1] <= A[3] ? true : false;
+            isBIn = B[1] <= B[3] ? true : false;
+            isCIn = C[1] <= C[3] ? true : false;
+            axis = 1;
+            break;
+        case 3: // y >= -w      bot side
+            isAIn = A[1] >= -A[3] ? true : false;
+            isBIn = B[1] >= -B[3] ? true : false;
+            isCIn = C[1] >= -C[3] ? true : false;
+            sign = -1;
+            axis = 1;
+            break;
+        case 4: // z <= w       far side
+            isAIn = A[2] <= A[3] ? true : false;
+            isBIn = B[2] <= B[3] ? true : false;
+            isCIn = C[2] <= C[3] ? true : false;
+            axis = 2;
+            break;
+        case 5: //z >= -w       near side
+            isAIn = A[2] >= -A[3] ? true : false;
+            isBIn = B[2] >= -B[3] ? true : false;
+            isCIn = C[2] >= -C[3] ? true : false;
+            sign = -1;
+            axis = 2;  
+            break;
+        default:
+            break;
+    }
+    /*
+    I I I
+    I I 0
+    I 0 I
+    I 0 0
+    0 I I
+    0 I 0
+    0 0 I
+    0 0 0
+    */
+    data_geometry vert1;
+    data_geometry vert2;
+
+    if(isAIn && isBIn && isCIn){
+        clip_triangle(state, v0, v1, v2, face+1);
+        return;
+    }else if(isAIn && isBIn && !isCIn){
+        vert1 = createTriangle(state, v0, v2, axis, sign);
+        vert2 = createTriangle(state, v1, v2, axis, sign);
+        clip_triangle(state, v0, v1, vert1, face+1);
+        clip_triangle(state, v1, vert1, vert2, face+1);
+    }else if(isAIn && !isBIn && isCIn){
+        vert1 = createTriangle(state, v0, v1, axis, sign);
+        vert2 = createTriangle(state, v2, v1, axis, sign);
+        clip_triangle(state, v0, vert1, v2, face+1);
+        clip_triangle(state, vert1, vert2, v2, face+1);
+    }else if(isAIn && !isBIn && !isCIn){
+        vert1 = createTriangle(state, v0, v1, axis, sign);
+        vert2 = createTriangle(state, v0, v2, axis, sign);
+        clip_triangle(state, v0, vert1, vert2, face+1);
+    }else if(!isAIn && isBIn && isCIn){
+        vert1 = createTriangle(state, v2, v0, axis, sign);
+        vert2 = createTriangle(state, v1, v0, axis, sign);
+        clip_triangle(state, vert2, v1, v2, face+1);
+        clip_triangle(state, vert2, v1, vert1, face+1);
+    }else if(!isAIn && isBIn && !isCIn){
+        vert1 = createTriangle(state, v1, v0, axis, sign);
+        vert2 = createTriangle(state, v1, v2, axis, sign);
+        clip_triangle(state, vert1, v1, vert2, face+1);
+    }else if(!isAIn && !isBIn && isCIn){
+        vert1 = createTriangle(state, v2, v0, axis, sign);
+        vert2 = createTriangle(state, v2, v1, axis, sign);
+        clip_triangle(state, vert1, vert2, v2, face+1);
+    }else if(!isAIn && !isBIn && !isCIn){
+        return;
+    }else{
+        return;
+    }
+    //if(face == 1){  //near face
+    //need to check if entire triangle inside
+    //     if(A[2] <= A[3] && B[2] <= B[3] && C[2] <= C[3]){
+    //         return; //triangle not outside n face
+    //     }
+    //     if(A[2] >= A[3]){       //A is inside
+    //         if(B[2] >= B[3]){   //B is inside
+                
+    //         }else{              //B is outside
+
+    //         }
+    //     }else{
+    //         if(B[2] >= B[3]){   //B is inside
+
+    //         }else{
+
+    //         }
+    //     }
+    // }
+
+    // cout << "x " << A[0] << " w " << A[3] << endl;
+    // cout << "y " << A[1] << " w " << A[3] << endl;
+    // cout << "z " << A[2] << " w " << A[3] << endl;
+    // if(abs(A[0]) <= abs(A[3]) && abs(A[1]) <= abs(A[3]) && abs(A[2]) <= abs(A[3])){
+    //     cout << "inside" << endl;
+    // }
+
+    //std::cout<<"TODO: implement clipping. (The current code passes the triangle through without clipping them.)"<<std::endl;
     clip_triangle(state,v0,v1,v2,face+1);
 }
 
@@ -123,9 +255,9 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
     float maxY = std::max(std::max(v02[1],v12[1]),v22[1]);
 
     float triangleArea = 0.5f*(((v12[0] * v22[1]) - (v22[0] * v12[1])) + ((v22[0] * v02[1]) - (v02[0] * v22[1])) + ((v02[0]*v12[1]) - (v12[0]*v02[1])));
-    float alpha;
-    float beta;
-    float gamma;
+    float alpha, beta, gamma;
+    //float tempalpha, tempbeta, tempgamma;
+    //float w;
 
     auto *data = new float[MAX_FLOATS_PER_VERTEX];
     data_fragment pixelData{data};
@@ -150,7 +282,16 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
                             break;
                         case interp_type::smooth:
                             denom = alpha/v0.gl_Position[3] + beta/v1.gl_Position[3] + gamma/v2.gl_Position[3];
-                            pixelData.data[k] = (alpha/v0.gl_Position[3])/denom + (beta/v1.gl_Position[3])/denom + (gamma/v2.gl_Position[3])/denom;
+                            // pixelData.data[k] = (alpha/v0.gl_Position[3])/denom + (beta/v1.gl_Position[3])/denom + (gamma/v2.gl_Position[3])/denom;
+
+                            // tempalpha = alpha / v0.gl_Position[3] / denom;
+                            // tempbeta = beta  / v1.gl_Position[3] / denom;
+                            // tempgamma = gamma / v2.gl_Position[3] / denom;
+                            // w = tempalpha * v0.gl_Position[3] + tempbeta * v1.gl_Position[3] + tempgamma * v2.gl_Position[3];
+                            
+                            pixelData.data[k] = (alpha / v0.gl_Position[3] / denom * v0.data[k]) 
+                                            + (beta  / v1.gl_Position[3] / denom * v1.data[k]) 
+                                            + (gamma / v2.gl_Position[3] / denom * v2.data[k]);
                             break;
                         case interp_type::noperspective:
                             pixelData.data[k] = alpha*v0.data[k] + beta*v1.data[k] + gamma*v2.data[k]; //Use the data of all three, with no perspective changes
@@ -169,3 +310,32 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
     //std::cout<<"TODO: implement rasterization"<<std::endl;
 }
 
+data_geometry createTriangle(driver_state& state, const data_geometry& v0, const data_geometry& v1, int axis, unsigned int sign){
+    
+    //https://youtu.be/VMD7fsCYO9o?t=854
+    float alpha = ((sign * v0.gl_Position[3]) - v0.gl_Position[axis]) / ((sign * v0.gl_Position[3]) - v0.gl_Position[axis] - ((sign * v1.gl_Position[3] - v1.gl_Position[axis])));
+
+    data_geometry temp;
+    //https://www.cs.ucr.edu/~craigs/courses/2022-summer-cs-130/lectures/barycentric-coordinates.pdf
+    temp.gl_Position = alpha * v0.gl_Position + (1 - alpha) * v1.gl_Position;
+    float noPersAlpha;
+
+    for (int i = 0; i < state.floats_per_vertex; i++) {
+		switch(state.interp_rules[i]) {
+            case(interp_type::flat): 
+                temp.data[i] = v0.data[i];
+                break;
+            case(interp_type::smooth): 
+                temp.data[i] = alpha * v0.data[i] + (1 - alpha) * v1.data[i];
+                break;
+            case(interp_type::noperspective):
+                noPersAlpha = (alpha * v0.gl_Position[3]) / (alpha * v0.gl_Position[3] + (1 - alpha) * v1.gl_Position[3]);
+                temp.data[i] = noPersAlpha * v0.data[i] + (1 - noPersAlpha) * v1.data[i];
+                break;
+            default:
+                break;
+        }
+
+	}
+    return temp;
+}
