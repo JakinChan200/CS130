@@ -57,7 +57,7 @@ void render(driver_state& state, render_type type)
                     state.vertex_shader(custData[j], temp[j], state.uniform_data);
                 }
                 clip_triangle(state, temp[0], temp[1], temp[2], 0);
-                rasterize_triangle(state, temp[0], temp[1], temp[2]);
+                //rasterize_triangle(state, temp[0], temp[1], temp[2]);
             }
             break;
         }
@@ -88,7 +88,6 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
     const data_geometry& v1, const data_geometry& v2,int face){
     
     //https://www.ijirt.org/master/publishedpaper/IJIRT100119_PAPER.pdf
-    //cout << face << endl;
     if(face==6){
         rasterize_triangle(state, v0, v1, v2);
         return;
@@ -103,7 +102,7 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
     bool isBIn = true;
     bool isCIn = true;
     float sign = 1;
-    int axis;
+    int axis = 0;
 
     switch(face){
         case 0: // x <= w       right side
@@ -148,6 +147,7 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
         default:
             break;
     }
+
     /*
     I I I
     I I 0
@@ -163,7 +163,6 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
 
     if(isAIn && isBIn && isCIn){
         clip_triangle(state, v0, v1, v2, face+1);
-        return;
     }else if(isAIn && isBIn && !isCIn){
         vert1 = createTriangle(state, v0, v2, axis, sign);
         vert2 = createTriangle(state, v1, v2, axis, sign);
@@ -182,7 +181,7 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
         vert1 = createTriangle(state, v2, v0, axis, sign);
         vert2 = createTriangle(state, v1, v0, axis, sign);
         clip_triangle(state, vert2, v1, v2, face+1);
-        clip_triangle(state, vert2, v1, vert1, face+1);
+        clip_triangle(state, vert2, v2, vert1, face+1);
     }else if(!isAIn && isBIn && !isCIn){
         vert1 = createTriangle(state, v1, v0, axis, sign);
         vert2 = createTriangle(state, v1, v2, axis, sign);
@@ -196,35 +195,10 @@ void clip_triangle(driver_state& state, const data_geometry& v0,
     }else{
         return;
     }
-    //if(face == 1){  //near face
-    //need to check if entire triangle inside
-    //     if(A[2] <= A[3] && B[2] <= B[3] && C[2] <= C[3]){
-    //         return; //triangle not outside n face
-    //     }
-    //     if(A[2] >= A[3]){       //A is inside
-    //         if(B[2] >= B[3]){   //B is inside
-                
-    //         }else{              //B is outside
-
-    //         }
-    //     }else{
-    //         if(B[2] >= B[3]){   //B is inside
-
-    //         }else{
-
-    //         }
-    //     }
-    // }
-
-    // cout << "x " << A[0] << " w " << A[3] << endl;
-    // cout << "y " << A[1] << " w " << A[3] << endl;
-    // cout << "z " << A[2] << " w " << A[3] << endl;
-    // if(abs(A[0]) <= abs(A[3]) && abs(A[1]) <= abs(A[3]) && abs(A[2]) <= abs(A[3])){
-    //     cout << "inside" << endl;
-    // }
+    //cout << vert1.gl_Position << endl;
 
     //std::cout<<"TODO: implement clipping. (The current code passes the triangle through without clipping them.)"<<std::endl;
-    clip_triangle(state,v0,v1,v2,face+1);
+    //clip_triangle(state,v0,v1,v2,face+1);
 }
 
 // Rasterize the triangle defined by the three vertices in the "in" array.  This
@@ -256,8 +230,6 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
 
     float triangleArea = 0.5f*(((v12[0] * v22[1]) - (v22[0] * v12[1])) + ((v22[0] * v02[1]) - (v02[0] * v22[1])) + ((v02[0]*v12[1]) - (v12[0]*v02[1])));
     float alpha, beta, gamma;
-    //float tempalpha, tempbeta, tempgamma;
-    //float w;
 
     auto *data = new float[MAX_FLOATS_PER_VERTEX];
     data_fragment pixelData{data};
@@ -272,7 +244,7 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
             gamma = 0.5f*(((v02[0] * v12[1]) - (v12[0] * v02[1])) + ((v12[0] * i) - (j * v12[1])) + ((j*v02[1]) - (v02[0]*i)))/triangleArea;
             
             if(alpha >= 0 && beta >= 0 && gamma >= 0){
-                zBuffer = alpha*v0.gl_Position[2] + beta*v1.gl_Position[2] + gamma*v2.gl_Position[2]; //Only take the closest color
+                zBuffer = alpha*v0.gl_Position[2]/v0.gl_Position[3] + beta*v1.gl_Position[2]/v1.gl_Position[3] + gamma*v2.gl_Position[2]/v2.gl_Position[3]; //Only take the closest color
                 if(!(zBuffer < state.image_depth[j + (i*state.image_width)])){continue;}
 
                 for(int k = 0; k < state.floats_per_vertex; k++){
@@ -282,16 +254,11 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
                             break;
                         case interp_type::smooth:
                             denom = alpha/v0.gl_Position[3] + beta/v1.gl_Position[3] + gamma/v2.gl_Position[3];
-                            // pixelData.data[k] = (alpha/v0.gl_Position[3])/denom + (beta/v1.gl_Position[3])/denom + (gamma/v2.gl_Position[3])/denom;
-
-                            // tempalpha = alpha / v0.gl_Position[3] / denom;
-                            // tempbeta = beta  / v1.gl_Position[3] / denom;
-                            // tempgamma = gamma / v2.gl_Position[3] / denom;
-                            // w = tempalpha * v0.gl_Position[3] + tempbeta * v1.gl_Position[3] + tempgamma * v2.gl_Position[3];
                             
-                            pixelData.data[k] = (alpha / v0.gl_Position[3] / denom * v0.data[k]) 
-                                            + (beta  / v1.gl_Position[3] / denom * v1.data[k]) 
-                                            + (gamma / v2.gl_Position[3] / denom * v2.data[k]);
+                            pixelData.data[k] = ((alpha / v0.gl_Position[3] / denom) * v0.data[k]) 
+                                            + ((beta  / v1.gl_Position[3] / denom) * v1.data[k]) 
+                                            + ((gamma / v2.gl_Position[3] / denom) * v2.data[k]);
+
                             break;
                         case interp_type::noperspective:
                             pixelData.data[k] = alpha*v0.data[k] + beta*v1.data[k] + gamma*v2.data[k]; //Use the data of all three, with no perspective changes
@@ -310,32 +277,32 @@ void rasterize_triangle(driver_state& state, const data_geometry& v0,
     //std::cout<<"TODO: implement rasterization"<<std::endl;
 }
 
-data_geometry createTriangle(driver_state& state, const data_geometry& v0, const data_geometry& v1, int axis, unsigned int sign){
-    
-    //https://youtu.be/VMD7fsCYO9o?t=854
-    float alpha = ((sign * v0.gl_Position[3]) - v0.gl_Position[axis]) / ((sign * v0.gl_Position[3]) - v0.gl_Position[axis] - ((sign * v1.gl_Position[3] - v1.gl_Position[axis])));
-
+data_geometry createTriangle(driver_state& state, const data_geometry& v0, const data_geometry& v1, int axis, float sign){
     data_geometry temp;
+    auto *data = new float[MAX_FLOATS_PER_VERTEX];
+
+    //https://youtu.be/VMD7fsCYO9o?t=854
+    float alpha = ((sign * v0.gl_Position[3]) - v0.gl_Position[axis]) / ((sign * v0.gl_Position[3]) - v0.gl_Position[axis] - (sign * v1.gl_Position[3]) + v1.gl_Position[axis]);
+
     //https://www.cs.ucr.edu/~craigs/courses/2022-summer-cs-130/lectures/barycentric-coordinates.pdf
-    temp.gl_Position = alpha * v0.gl_Position + (1 - alpha) * v1.gl_Position;
-    float noPersAlpha;
+    temp.gl_Position = alpha * v1.gl_Position + (1 - alpha) * v0.gl_Position;
+    float noPersAlpha = (alpha * v1.gl_Position[3]) / (alpha * v1.gl_Position[3] + (1 - alpha) * v0.gl_Position[3]);
 
     for (int i = 0; i < state.floats_per_vertex; i++) {
 		switch(state.interp_rules[i]) {
-            case(interp_type::flat): 
-                temp.data[i] = v0.data[i];
+            case(interp_type::flat):
+                data[i] = v0.data[i];
                 break;
-            case(interp_type::smooth): 
-                temp.data[i] = alpha * v0.data[i] + (1 - alpha) * v1.data[i];
+            case(interp_type::smooth):
+                data[i] = alpha * v1.data[i] + (1 - alpha) * v0.data[i];
                 break;
             case(interp_type::noperspective):
-                noPersAlpha = (alpha * v0.gl_Position[3]) / (alpha * v0.gl_Position[3] + (1 - alpha) * v1.gl_Position[3]);
-                temp.data[i] = noPersAlpha * v0.data[i] + (1 - noPersAlpha) * v1.data[i];
+                data[i] = noPersAlpha * v1.data[i] + (1 - noPersAlpha) * v0.data[i];
                 break;
             default:
                 break;
         }
-
 	}
+    temp.data = data;
     return temp;
 }
